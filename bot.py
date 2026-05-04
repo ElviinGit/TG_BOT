@@ -22,7 +22,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return "Bot is running and Alive!"
+    return "I just updated my index page! This is a simple Flask app running alongside the Telegram bot."
 
 def run_server():
     port = int(os.environ.get('PORT', 5000))

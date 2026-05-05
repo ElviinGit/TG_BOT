@@ -1,6 +1,6 @@
 import telebot
 import os
-from flask import Flask
+from flask import Flask, request
 from threading import Thread
 from dotenv import load_dotenv
 
@@ -13,6 +13,10 @@ bot = telebot.TeleBot(BOT_TOKEN)
 def send_welcome(message):
     bot.reply_to(message, "This Message is from Elvin's Bot. How can I assist you?")
 
+@bot.message_handler(commands=['myid'])
+def send_chat_id(message):
+    bot.reply_to(message, f"Your Chat ID is: {message.chat.id}")
+
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):
     print("Chat ID:", message.chat.id) # for debugging purposes, to see the chat ID in the console
@@ -23,6 +27,21 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     return "I just updated my index page! This is a simple Flask app running alongside the Telegram bot."
+
+@app.route('/send', methods=['GET'])
+def send_mesasge_from_web():
+    chat_id = request.args.get('chat_id')
+    text = request.args.get('text')
+    secret = request.args.get('secret')
+    if secret != "yob_ana":
+        return "Unauthorized person detected", 403
+    if not chat_id or not text:
+        return "Missing chat_id or text parameter", 400 
+    try:
+        bot.send_message(chat_id=chat_id, text=text)
+        return "Message sent successfully!"
+    except Exception as e:
+        return f"Failed to send message: {str(e)}", 500 
 
 def run_server():
     port = int(os.environ.get('PORT', 5000))

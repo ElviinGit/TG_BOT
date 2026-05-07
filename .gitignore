@@ -1,3 +1,6 @@
 __pycache__/
 .env
 venv/
+bot.py
+fourth_bot.py
+second_bot.py

@@ -6,6 +6,7 @@ import time
 import telebot
 import os
 from dotenv import load_dotenv
+from webdriver_manager.chrome import ChromeDriverManager
 
 load_dotenv()
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -31,7 +32,10 @@ def get_car_prices(make_name, year=None):
     chrome_options.add_argument("--headless") 
     # CRITICAL: Make the bot look like a real human using Google Chrome
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
-    driver = webdriver.Chrome(options=chrome_options)
+    driver = webdriver.Chrome(
+    service=Service(ChromeDriverManager(version="148.0.7778.96").install()),
+    options=chrome_options
+            )
     try:
         print("Wit for site opening")
 

@@ -4,9 +4,12 @@ from selenium.webdriver.chrome.service import Service
 from bs4 import BeautifulSoup
 import time
 import telebot
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-BOT_TOKEN = "8655874845:AAGaFPp-OtEg7021pSa2Rup0WKabnIRhcoI"
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+URL = os.environ.get("URL")
 bot = telebot.TeleBot(BOT_TOKEN)
 
 CAR_ID = {
@@ -30,9 +33,9 @@ def get_car_prices(make_name, year=None):
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
     driver = webdriver.Chrome(options=chrome_options)
     try:
-        print("Opening turbo.az... Please wait 4 seconds.")
+        print("Wit for site opening")
 
-        complete_url = (f"https://turbo.az/autos?q%5Bsort%5D=price_asc&q%5Bmake%5D%5B%5D={make_id}"
+        complete_url = (f"{URL}/autos?q%5Bsort%5D=price_asc&q%5Bmake%5D%5B%5D={make_id}"
                       f"&q%5Byear_from%5D={year}&q%5Byear_to%5D={year}&q%5Bcurrency%5D=azn"
                       f"&q%5Bloan%5D=0&q%5Bbarter%5D=0&q%5Bcrashed%5D=1&q%5Bpainted%5D=1&q%5Bfor_spare_parts%5D=0")
         
@@ -49,7 +52,7 @@ def get_car_prices(make_name, year=None):
         first_product = product_table.find('div', class_='products-i')
         print("firs prduct defined")
         product_link = first_product.find('a', class_='products-i__link')
-        product_full_link = "https://turbo.az" + product_link['href']
+        product_full_link = f"{URL} + {product_link['href']}"
         product_price = first_product.find('div', class_='products-i__price products-i__bottom-text').text
         return {
             "price": product_price,

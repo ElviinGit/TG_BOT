@@ -30,64 +30,67 @@ CAR_ID = {
 
 def get_car_prices(make_name, year=None):
     make_id = CAR_ID.get(make_name)
+    
+    # 1. Set up Chrome options
     chrome_options = Options()
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--headless=new")  # try headless=new or remove for debugging
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--headless") 
     chrome_options.add_argument("--disable-notifications")
+    chrome_options.add_argument("--disable-gcm-registration")
+    
+    # CRITICAL: Force a desktop window size so you don't get the mobile site layout
+    chrome_options.add_argument("--window-size=1920,1080")
 
+    # Make the bot look like a real human
+    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
+    
     driver = webdriver.Chrome(options=chrome_options)
+    
     try:
-        complete_url = (
-            f"{URL}/autos?q%5Bsort%5D=price_asc&q%5Bmake%5D%5B%5D={make_id}"
-            f"&q%5Byear_from%5D={year}&q%5Byear_to%5D={year}&q%5Bcurrency%5D=azn"
-            f"&q%5Bloan%5D=0&q%5Bbarter%5D=0&q%5Bcrashed%5D=1&q%5Bpainted%5D=1&q%5Bfor_spare_parts%5D=0"
-        )
+        print("Wait for site opening")
+        complete_url = (f"{URL}/autos?q%5Bsort%5D=price_asc&q%5Bmake%5D%5B%5D={make_id}"
+                      f"&q%5Byear_from%5D={year}&q%5Byear_to%5D={year}&q%5Bcurrency%5D=azn"
+                      f"&q%5Bloan%5D=0&q%5Bbarter%5D=0&q%5Bcrashed%5D=1&q%5Bpainted%5D=1&q%5Bfor_spare_parts%5D=0")
+        
         driver.get(complete_url)
+        
+        # 2. Smart Wait: Wait up to 15 seconds specifically for the target element to appear
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "products-title"))
+        )
+        print("Page fully loaded and target element found.")
+        
+        # Get the page source and parse it
+        page_source = driver.page_source
+        soup = BeautifulSoup(page_source, 'html.parser')
 
-        # Wait up to 15s for the products container or a known element to appear
-        wait = WebDriverWait(driver, 15)
-        try:
-            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.products")))
-        except Exception:
-            # Save debug artifacts
-            timestamp = int(time.time())
-            screenshot = f"/tmp/page_{timestamp}.png"
-            htmlfile = f"/tmp/page_{timestamp}.html"
-            driver.save_screenshot(screenshot)
-            with open(htmlfile, "w", encoding="utf-8") as f:
-                f.write(driver.page_source)
-            raise RuntimeError(f"Timed out waiting for products. Saved {screenshot} and {htmlfile} for inspection.")
-
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-
-        title_div = soup.find("div", class_="products-title")
-        if not title_div:
-            # Save debug artifacts
-            timestamp = int(time.time())
-            htmlfile = f"/tmp/page_no_title_{timestamp}.html"
-            with open(htmlfile, "w", encoding="utf-8") as f:
-                f.write(driver.page_source)
-            raise ValueError(f"products-title not found in page. Saved HTML to {htmlfile}")
-
-        product_table = title_div.find_next_sibling("div", class_="products")
-        if not product_table:
-            raise ValueError("products sibling not found after products-title")
-
-        first_product = product_table.find("div", class_="products-i")
-        if not first_product:
-            raise ValueError("No product entries found in products container")
-
-        product_link = first_product.find("a", class_="products-i__link")
-        product_full_link = f"{URL}{product_link['href']}" if product_link else None
-        price_div = first_product.find("div", class_="products-i__price products-i__bottom-text")
-        product_price = price_div.get_text(strip=True) if price_div else None
-
-        return {"price": product_price, "link": product_full_link}
-
+        # Scrap phase
+        title_div = soup.find('div', class_='products-title')
+        product_table = title_div.find_next_sibling('div', class_='products')
+        first_product = product_table.find('div', class_='products-i')
+        print("First product defined")
+        
+        product_link = first_product.find('a', class_='products-i__link')
+        product_full_link = f"{URL}{product_link['href']}"
+        product_price = first_product.find('div', class_='products-i__price products-i__bottom-text').text
+        
+        return {
+            "price": product_price.strip(),
+            "link": product_full_link,
+        }    
+        
+    except Exception as e:
+        # 3. Debugging: Save what the browser sees to diagnose bot blocking
+        driver.save_screenshot("debug_error.png")
+        with open("debug_page.html", "w", encoding="utf-8") as f:
+            f.write(driver.page_source)
+        print(f"An error occurred: {e}")
+        print("Saved 'debug_error.png' and 'debug_page.html' to check what the server saw.")
+        return None
+        
     finally:
+        # Close the browser
         driver.quit()
 @bot.message_handler(commands=['start'])
 def send_welcome(message):

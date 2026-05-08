@@ -49,7 +49,7 @@ def get_car_prices(make_name, year=None):
                       f"&q%5Bloan%5D=0&q%5Bbarter%5D=0&q%5Bcrashed%5D=1&q%5Bpainted%5D=1&q%5Bfor_spare_parts%5D=0")
         
         driver.get(complete_url)
-        time.sleep(10)  # Wait for the page to load
+        time.sleep(4)  # Wait for the page to load
         
         # Get the page source and parse it
         page_source = driver.page_source

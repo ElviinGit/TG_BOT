@@ -6,13 +6,13 @@ import time
 import telebot
 import os
 from dotenv import load_dotenv
-from webdriver_manager.chrome import ChromeDriverManager
 
 load_dotenv()
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 URL = os.environ.get("URL")
 bot = telebot.TeleBot(BOT_TOKEN)
 
+# Car types can be enhanced from here
 CAR_ID = {
     "Mercedes": "4",
     "BMW": "3",
@@ -20,24 +20,29 @@ CAR_ID = {
     "Hyundai": "1",
     "Lada": "5",
     "Mitsubishi": "6",
+    "Nissan": "7",
+    "Kia": "8",
+    "Audi": "9",
+    "Daewoo": "11",
+    "Byd": "51",
+    "Changan": "163",
 }
 
 def get_car_prices(make_name, year=None):
-
     make_id = CAR_ID.get(make_name)
     # 1. Set up Chrome options
     chrome_options = Options()
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--headless") 
+    chrome_options.add_argument("--disable-notifications")
+    chrome_options.add_argument("--disable-gcm-registration")
+
     # CRITICAL: Make the bot look like a real human using Google Chrome
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
-    driver = webdriver.Chrome(
-    service=Service(ChromeDriverManager(version="148.0.7778.96").install()),
-    options=chrome_options
-            )
+    driver = webdriver.Chrome(options=chrome_options)
     try:
-        print("Wit for site opening")
+        print("Wait for site opening")
 
         complete_url = (f"{URL}/autos?q%5Bsort%5D=price_asc&q%5Bmake%5D%5B%5D={make_id}"
                       f"&q%5Byear_from%5D={year}&q%5Byear_to%5D={year}&q%5Bcurrency%5D=azn"
@@ -54,19 +59,16 @@ def get_car_prices(make_name, year=None):
         title_div = soup.find('div', class_='products-title')
         product_table = title_div.find_next_sibling('div', class_='products')
         first_product = product_table.find('div', class_='products-i')
-        print("firs prduct defined")
+        print("first prduct defined")
         product_link = first_product.find('a', class_='products-i__link')
-        product_full_link = f"{URL} + {product_link['href']}"
+        product_full_link = f"{URL}" + f"{product_link['href']}"
         product_price = first_product.find('div', class_='products-i__price products-i__bottom-text').text
         return {
             "price": product_price,
             "link": product_full_link,
-        }
-    
+        }    
     except Exception as e:
-            print(f"An error occurred: {e}")        
-        
-
+            print(f"An error occurred: {e}")               
     finally:
         # Close the browser
         driver.quit()
@@ -75,27 +77,21 @@ def get_car_prices(make_name, year=None):
 def send_welcome(message):
     bot.reply_to(message, "Welcome! Send me a car model and I'll fetch the prices for you.")
 
+#user input validation
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     parts = message.text.strip().split()
-
     if len(parts) != 2:
         bot.reply_to(message, "❌ Please provide both car model and year (e.g., 'Mercedes 2020').")
         return
-
     make_name = parts[0].upper() if parts[0].upper() in CAR_ID else parts[0].capitalize()
     year = parts[1]
-
     if not year.isdigit() or len(year) != 4:
         bot.reply_to(message, "❌ Please provide a valid year (e.g., '2020').")
         return
-
     loading_msg = bot.reply_to(message, "Processing your request... Please wait.")  
-
     data = get_car_prices(make_name, year)
-
     bot.delete_message(chat_id=loading_msg.chat.id, message_id=loading_msg.message_id)                                                          
-
     if not data:
         response = "❌ Could not find any cars at the moment."
         bot.send_message(chat_id=message.chat.id, text=response)

@@ -4,6 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
+import undetected_chromedriver as uc
 import telebot
 from dotenv import load_dotenv
 import os
@@ -35,6 +36,9 @@ def get_car_prices(make_name, year=None):
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     # chrome_options.add_argument("--headless") 
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    # chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    # chrome_options.add_experimental_option('useAutomationExtension', False)
     chrome_options.add_argument("--disable-notifications")
     chrome_options.add_argument("--disable-gcm-registration")
     
@@ -42,14 +46,11 @@ def get_car_prices(make_name, year=None):
     chrome_options.add_argument("--window-size=1920,1080")
 
     # Make the bot look like a real human
-    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
+    # chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
     
-    driver = webdriver.Chrome(options=chrome_options)
-    driver.execute_cdp_cmd("Network.setExtraHTTPHeaders", {
+    # driver = webdriver.Chrome(options=chrome_options)
+    driver = uc.Chrome(options=chrome_options, version_main=147)
 
-    "headers": {"Accept-Language": "en-US,en;q=0.9", "Referer": "https://turbo.az"}
-                })
-    
     try:
         print("Wait for site opening")
         complete_url = (f"{URL}/autos?q%5Bsort%5D=price_asc&q%5Bmake%5D%5B%5D={make_id}"

@@ -4,7 +4,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
-import time
 import telebot
 from dotenv import load_dotenv
 import os
@@ -35,7 +34,7 @@ def get_car_prices(make_name, year=None):
     chrome_options = Options()
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--headless") 
+    # chrome_options.add_argument("--headless") 
     chrome_options.add_argument("--disable-notifications")
     chrome_options.add_argument("--disable-gcm-registration")
     
@@ -46,6 +45,159 @@ def get_car_prices(make_name, year=None):
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
     
     driver = webdriver.Chrome(options=chrome_options)
+    driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
+    "source": '''
+    Object.defineProperty(navigator, 'webdriver', {
+        get: () => undefined
+    });
+    Object.defineProperty(navigator, 'plugins', {
+            get: function() { return {"0":{"0":{}},"1":{"0":{}},"2":{"0":{},"1":{}}}; }
+    });
+    Object.defineProperty(navigator, 'languages', {
+        get: () => ["en-US", "en"]
+    });
+    Object.defineProperty(navigator, 'mimeTypes', {
+        get: function() { return {"0":{},"1":{},"2":{},"3":{}}; }
+    });
+
+    window.screenY=23;
+    window.screenTop=23;
+    window.outerWidth=1337;
+    window.outerHeight=825;
+    window.chrome =
+    {
+      app: {
+        isInstalled: false,
+      },
+      webstore: {
+        onInstallStageChanged: {},
+        onDownloadProgress: {},
+      },
+      runtime: {
+        PlatformOs: {
+          MAC: 'mac',
+          WIN: 'win',
+          ANDROID: 'android',
+          CROS: 'cros',
+          LINUX: 'linux',
+          OPENBSD: 'openbsd',
+        },
+        PlatformArch: {
+          ARM: 'arm',
+          X86_32: 'x86-32',
+          X86_64: 'x86-64',
+        },
+        PlatformNaclArch: {
+          ARM: 'arm',
+          X86_32: 'x86-32',
+          X86_64: 'x86-64',
+        },
+        RequestUpdateCheckStatus: {
+          THROTTLED: 'throttled',
+          NO_UPDATE: 'no_update',
+          UPDATE_AVAILABLE: 'update_available',
+        },
+        OnInstalledReason: {
+          INSTALL: 'install',
+          UPDATE: 'update',
+          CHROME_UPDATE: 'chrome_update',
+          SHARED_MODULE_UPDATE: 'shared_module_update',
+        },
+        OnRestartRequiredReason: {
+          APP_UPDATE: 'app_update',
+          OS_UPDATE: 'os_update',
+          PERIODIC: 'periodic',
+        },
+      },
+    };
+    window.navigator.chrome =
+    {
+      app: {
+        isInstalled: false,
+      },
+      webstore: {
+        onInstallStageChanged: {},
+        onDownloadProgress: {},
+      },
+      runtime: {
+        PlatformOs: {
+          MAC: 'mac',
+          WIN: 'win',
+          ANDROID: 'android',
+          CROS: 'cros',
+          LINUX: 'linux',
+          OPENBSD: 'openbsd',
+        },
+        PlatformArch: {
+          ARM: 'arm',
+          X86_32: 'x86-32',
+          X86_64: 'x86-64',
+        },
+        PlatformNaclArch: {
+          ARM: 'arm',
+          X86_32: 'x86-32',
+          X86_64: 'x86-64',
+        },
+        RequestUpdateCheckStatus: {
+          THROTTLED: 'throttled',
+          NO_UPDATE: 'no_update',
+          UPDATE_AVAILABLE: 'update_available',
+        },
+        OnInstalledReason: {
+          INSTALL: 'install',
+          UPDATE: 'update',
+          CHROME_UPDATE: 'chrome_update',
+          SHARED_MODULE_UPDATE: 'shared_module_update',
+        },
+        OnRestartRequiredReason: {
+          APP_UPDATE: 'app_update',
+          OS_UPDATE: 'os_update',
+          PERIODIC: 'periodic',
+        },
+      },
+    };
+    ['height', 'width'].forEach(property => {
+        const imageDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, property);
+
+        // redefine the property with a patched descriptor
+        Object.defineProperty(HTMLImageElement.prototype, property, {
+            ...imageDescriptor,
+            get: function() {
+                // return an arbitrary non-zero dimension if the image failed to load
+            if (this.complete && this.naturalHeight == 0) {
+                return 20;
+            }
+                return imageDescriptor.get.apply(this);
+            },
+        });
+    });
+
+    const getParameter = WebGLRenderingContext.getParameter;
+    WebGLRenderingContext.prototype.getParameter = function(parameter) {
+        if (parameter === 37445) {
+            return 'Intel Open Source Technology Center';
+        }
+        if (parameter === 37446) {
+            return 'Mesa DRI Intel(R) Ivybridge Mobile ';
+        }
+
+        return getParameter(parameter);
+    };
+
+    const elementDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+
+    Object.defineProperty(HTMLDivElement.prototype, 'offsetHeight', {
+        ...elementDescriptor,
+        get: function() {
+            if (this.id === 'modernizr') {
+            return 1;
+            }
+            return elementDescriptor.get.apply(this);
+        },
+    });
+    '''
+})
+
     
     try:
         print("Wait for site opening")

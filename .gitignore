@@ -1,6 +1,7 @@
+*.html
+*.png
 __pycache__/
 .env
 venv/
 bot.py
 fourth_bot.py
-*.png

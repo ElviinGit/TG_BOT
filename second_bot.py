@@ -7,8 +7,10 @@ options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_argument("--window-size=1920,1080")
 
-with uc.Chrome(version_main=147) as driver:
+driver = uc.Chrome(version_main=147, options=options)
+try:
     driver.get("https://turbo.az")
-    time.sleep(10)
+    print(driver.title)
+except Exception as e:
     driver.save_screenshot("debug_error.png")
-    print(" closed after 10 second")
+driver.quit()

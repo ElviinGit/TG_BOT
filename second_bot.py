@@ -1,16 +1,28 @@
-import undetected_chromedriver as uc
+from seleniumbase import Driver
 import time
-options = uc.ChromeOptions()
-options.add_argument("--headless")
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--disable-blink-features=AutomationControlled")
-options.add_argument("--window-size=1920,1080")
+# UC Mode is specifically designed to bypass anti-bot services like Cloudflare
+# 'headless=True' in UC mode uses a special 'headed-headless' trick to stay undetected
+driver = Driver(uc=True, headless=True)
 
-driver = uc.Chrome(version_main=147, options=options)
 try:
-    driver.get("https://turbo.az")
-    print(driver.title)
+    url = "https://turbo.az"
+    
+    # Using uc_open instead of get allows SB to handle potential challenges
+    driver.uc_open_with_reconnect(url, reconnect_time=5)
+    
+    # Sometimes a small manual wait helps the page finish its internal checks
+    time.sleep(3)
+    
+    # If there is a "Verify you are human" checkbox, this can often bypass it:
+    driver.uc_gui_handle_captcha() 
+
+    print(f"Page Title: {driver.title}")
+    
+    # Take a screenshot to verify what the bot actually sees
+    driver.save_screenshot("turbo_success.png")
+
 except Exception as e:
+    print(f"An error occurred: {e}")
     driver.save_screenshot("debug_error.png")
-driver.quit()
+finally:
+    driver.quit()

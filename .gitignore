@@ -3,3 +3,4 @@ __pycache__/
 venv/
 bot.py
 fourth_bot.py
+*.png

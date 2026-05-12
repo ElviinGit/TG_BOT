@@ -1,28 +1,25 @@
-from seleniumbase import Driver
-import time
-# UC Mode is specifically designed to bypass anti-bot services like Cloudflare
-# 'headless=True' in UC mode uses a special 'headed-headless' trick to stay undetected
-driver = Driver(uc=True, headless=True)
+from seleniumbase import SB
 
-try:
+# Use SB context manager for automatic cleanup
+with SB(uc=True, xvfb=True, block_images=True) as sb:
     url = "https://turbo.az"
     
-    # Using uc_open instead of get allows SB to handle potential challenges
-    driver.uc_open_with_reconnect(url, reconnect_time=5)
-    
-    # Sometimes a small manual wait helps the page finish its internal checks
-    time.sleep(3)
-    
-    # If there is a "Verify you are human" checkbox, this can often bypass it:
-    driver.uc_gui_handle_captcha() 
+    try:
+        # We use a longer timeout and avoid the 'reconnect' function 
+        # initially to see if a standard UC load works first.
+        sb.activate_cdp_mode(url) # CDP mode is often stealthier than standard get
+        sb.sleep(5)
+        
+        # Check if we are challenged
+        if "challenges.cloudflare.com" in sb.get_page_source():
+            print("Cloudflare detected. Attempting bypass...")
+            sb.uc_gui_click_captcha()
+            sb.sleep(4)
 
-    print(f"Page Title: {driver.title}")
-    
-    # Take a screenshot to verify what the bot actually sees
-    driver.save_screenshot("turbo_success.png")
+        print(f"Success! Title: {sb.get_title()}")
+        sb.save_screenshot("turbo_final.png")
 
-except Exception as e:
-    print(f"An error occurred: {e}")
-    driver.save_screenshot("debug_error.png")
-finally:
-    driver.quit()
+    except Exception as e:
+        print(f"Caught Error: {e}")
+        # We don't save screenshot here because if the browser 
+        # is crashed, save_screenshot will just throw another error.
